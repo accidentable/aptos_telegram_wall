@@ -208,7 +208,7 @@ func main() {
 
 		// Check for spam in group chats
 		if update.Message.Chat.Type == "group" || update.Message.Chat.Type == "supergroup" {
-			isSpam, reason, reasonKR := detector.IsSpam(text)
+			isSpam, reason, _ := detector.IsSpam(text)
 			if isSpam {
 				// Delete the spam message
 				log.Printf("Detected spam from %s (reason: %s), attempting to delete...",
@@ -223,7 +223,7 @@ func main() {
 						update.Message.From.UserName, reason)
 
 					// Record spam and check if user should be banned
-					count, shouldBan := detector.RecordSpam(update.Message.Chat.ID, update.Message.From.ID)
+					_, shouldBan := detector.RecordSpam(update.Message.Chat.ID, update.Message.From.ID)
 
 					if shouldBan {
 						// Ban the user
@@ -238,15 +238,7 @@ func main() {
 							log.Printf("Failed to ban user %s: %v", update.Message.From.UserName, banErr)
 						} else {
 							log.Printf("Banned user %s for repeated spam", update.Message.From.UserName)
-							notifyMsg := tgbotapi.NewMessage(update.Message.Chat.ID,
-								fmt.Sprintf("🚫 @%s 님이 스팸 %d회로 차단되었습니다 [%s]", update.Message.From.UserName, count, reasonKR))
-							bot.Send(notifyMsg)
 						}
-					} else {
-						// Send warning message with count
-						notifyMsg := tgbotapi.NewMessage(update.Message.Chat.ID,
-							fmt.Sprintf("🚫 @%s 스팸 삭제 [%s] (경고 %d/3)", update.Message.From.UserName, reasonKR, count))
-						bot.Send(notifyMsg)
 					}
 				}
 			}
